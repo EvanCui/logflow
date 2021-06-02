@@ -2237,7 +2237,7 @@ exit:
 Size_t CopyCSharpFormat(PCHAR formatOut, Size_t size, PCSTR source, Size_t len)
 {
     Size_t written = 0;
-    for (int j = 0; j < len && source[j] != '\0'; j++)
+    for (Size_t j = 0; j < len && source[j] != '\0'; j++)
     {
         if (written >= size) return written;
         char c = source[j];
@@ -2270,7 +2270,7 @@ Size_t __CRTDECL log_entry_sprintf_csformat(
 
     Size_t count = MIN(parameterMaxCount, pPreprocessBlock->m_nDescInUse);
 
-    for (int i = 0; i < count; i++)
+    for (Size_t i = 0; i < count; i++)
     {
         // copy up to the first format specifier into the output buffer.
         format_param_desc *pCurDesc = &pPreprocessBlock->m_param_descs[i];
