@@ -16,6 +16,8 @@ namespace LogFlow.Viewer
     using LogFlow.DataModel;
     using LogFlow.Viewer.LogFilter;
     using LogFlow.Viewer.Properties;
+    using Newtonsoft.Json;
+    using System.Text;
 
     public partial class MainFormListView : Form
     {
@@ -466,7 +468,7 @@ namespace LogFlow.Viewer
 
             await v.CountAsync(f, this.token);
 
-            if(object.ReferenceEquals(this.CurrentView, v) && ! this.IsDisposed)
+            if (object.ReferenceEquals(this.CurrentView, v) && !this.IsDisposed)
             {
                 this.toolStripLabelCount.Text = (v.LastCountResult ?? 0).ToString();
             };
@@ -855,7 +857,7 @@ namespace LogFlow.Viewer
         }
 
         private DateTime lastCollect = DateTime.UtcNow;
-        private Stopwatch lifetime = Stopwatch.StartNew();
+        private readonly Stopwatch lifetime = Stopwatch.StartNew();
 
         private void timerMemory_Tick(object sender, EventArgs e)
         {
@@ -1160,8 +1162,7 @@ namespace LogFlow.Viewer
 
         private void Goto()
         {
-            int gotoId;
-            if (!int.TryParse(this.toolStripComboBoxString.Text, out gotoId))
+            if (!int.TryParse(this.toolStripComboBoxString.Text, out int gotoId))
             {
                 this.toolStripComboBoxString.Focus();
 
@@ -1208,12 +1209,12 @@ namespace LogFlow.Viewer
 
         private void toolStripMenuItemTag_Click(object sender, EventArgs e)
         {
-
+            this.tag1ToolStripMenuItem.PerformClick();
         }
 
         private void gotoToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
+            this.toolStripButtonGoto_Click(sender, e);
         }
 
         private void UpdateProgress()
@@ -1235,6 +1236,86 @@ namespace LogFlow.Viewer
         {
             this.UpdateMainGridRowCount();
             this.UpdateProgress();
+        }
+
+        private IEnumerable<ExportFullDataItem> GetSelectedExportFullDataItems() =>
+            this.ConvertToExportFullDataItems(this.GetSelectedItems());
+
+        private IEnumerable<ExportFullDataItem> GetCurrentViewExportFullDataItems() =>
+            this.ConvertToExportFullDataItems(Enumerable.Range(0, this.CurrentView.TotalCount).Select(i => this.CurrentView.GetRowValue(i)));
+
+        private IEnumerable<ExportFullDataItem> ConvertToExportFullDataItems(IEnumerable<DataItemBase> dataItems)
+        {
+            var source = this.CurrentView.Source;
+
+            return dataItems.Select(dataItem => new ExportFullDataItem()
+            {
+                FormattedText = string.Format(source.Templates[dataItem.TemplateId], dataItem.Parameters),
+                Parameters = dataItem.Parameters,
+                Template = source.Templates[dataItem.TemplateId],
+                Time = dataItem.Time,
+            }); ;
+        }
+
+        private void ExportDataToFile(Func<IEnumerable<ExportFullDataItem>> getDataItemsToExport)
+        {
+            var result = this.saveFileDialog.ShowDialog();
+
+            switch (result)
+            {
+                case DialogResult.OK:
+                    var extension = Path.GetExtension(this.saveFileDialog.FileName);
+                    switch (extension)
+                    {
+                        case ".json":
+                            var jsonString = JsonConvert.SerializeObject(getDataItemsToExport());
+
+                            using (var stream = new StreamWriter(this.saveFileDialog.OpenFile(), Encoding.UTF8))
+                            {
+                                stream.WriteLine(jsonString);
+                            }
+
+                            break;
+
+                        default:
+                            MessageBox.Show("Unsupported export file type.", "Unsupported export file type.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            break;
+                    }
+
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void exportAsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.ExportDataToFile(this.GetCurrentViewExportFullDataItems);
+        }
+
+        private void exportAsToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            this.ExportDataToFile(this.GetCurrentViewExportFullDataItems);
+        }
+
+        private void exportSelectedAsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.ExportDataToFile(this.GetSelectedExportFullDataItems);
+        }
+
+        private void tag1ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.toolStripButtonTag1.PerformClick();
+        }
+
+        private void tag2ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.toolStripButtonTag2.PerformClick();
+        }
+
+        private void tag3ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.toolStripButtonTag3.PerformClick();
         }
     }
 }

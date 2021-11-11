@@ -2,7 +2,7 @@
 
 namespace LogFlow.Viewer
 {
-    partial class FastListView : ListView
+    partial class FastListView
     {
         /// <summary> 
         /// Required designer variable.

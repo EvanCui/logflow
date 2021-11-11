@@ -6,7 +6,7 @@
     using System.Windows.Forms;
     using Properties;
 
-    public partial class FastListView
+    public partial class FastListView : ListView
     {
         public FastListView()
         {
